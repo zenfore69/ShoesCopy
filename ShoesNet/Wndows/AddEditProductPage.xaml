@@ -1,0 +1,65 @@
+﻿<Page x:Class="ShoesNet.Wndows.AddEditProductPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:ShoesNet.Wndows"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="Редактирование товара">
+
+    <Grid Margin="20">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Column="0" Grid.RowSpan="2" Margin="0,0,20,0">
+            <Image x:Name="ProductImage" Height="150" Width="150" Margin="0,0,0,10" Stretch="Uniform"/>
+            <Button Content="Выбрать фото" Click="BtnSelectPhoto_Click"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Grid.Row="1" Margin="0,0,20,0">
+            <TextBlock Text="Артикул"/>
+            <TextBox x:Name="TxtArticle" Margin="0,0,0,10"/>
+            <TextBlock Text="Наименование:"/>
+            <TextBox x:Name="TxtName" Text="{Binding НаименованиеТовара}" Margin="0,5,0,15"/>
+            <TextBlock Text="Категория:"/>
+            <ComboBox x:Name="CmbCategory" Text="{Binding КатегорияТовара}" Margin="0,0,0,10"/>
+            <TextBlock Text="Производитель:"/>
+            <ComboBox x:Name="CmbManufacturer" Text="{Binding Производитель}" Margin="0,0,0,10"/>
+            <TextBlock Text="Поставщик:"/>
+            <TextBox x:Name="TxtSupplier" Text="{Binding Поставщик}" Margin="0,0,0,10"/>
+            <TextBlock Text="Единица измерения:"/>
+            <TextBox x:Name="TxtUnit" Text="{Binding ЕдиницаИзмерения}" Margin="0,0,0,10"/>
+
+            <Grid Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,5,0">
+                    <TextBlock Text="Цена:"/>
+                    <TextBox x:Name="TxtPrice" Text="{Binding Цена}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="5,0,5,0">
+                    <TextBlock Text="Скидка (%):"/>
+                    <TextBox x:Name="TxtDiscount" Text="{Binding ДействующаяСкидка}"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Margin="5,0,5,0">
+                    <TextBlock Text="Кол-во на складе:"/>
+                    <TextBox x:Name="TxtQuantity" Text="{Binding КолВоНаСкладе}"/>
+                </StackPanel>
+            </Grid>
+            <TextBlock Text="Описание:"/>
+            <TextBox x:Name="TxtDescription" Text="{Binding ОписаниеТовара}" TextWrapping="Wrap" Height="60" AcceptsReturn="True"/>
+        </StackPanel>
+        <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+            <Button Content="Сохранить" Click="BtnSave_Click" Width="150"/>
+        </StackPanel>
+    </Grid>
+</Page>

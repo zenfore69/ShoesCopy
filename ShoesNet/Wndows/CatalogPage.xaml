@@ -39,7 +39,7 @@
             <Button x:Name="BtnOrders" Content="Заказы" Visibility="Collapsed"/>
         </StackPanel>
 
-        <ListView x:Name="LViewProducts" Grid.Row="2" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <ListView x:Name="LViewProducts" Grid.Row="2" ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="LViewProducts_MouseDoubleClick">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Border x:Name="ProductBorder" BorderThickness="1" BorderBrush="LightGray" Margin="5" Padding="5" Width="800">
@@ -61,6 +61,8 @@
                             <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Right">
                                 <TextBlock Text="{Binding Цена, StringFormat='Цена: {0} руб.'}" FontWeight="Bold" FontSize="18"/>
                                 <TextBlock Text="{Binding ДействующаяСкидка, StringFormat='Скидка: {0}%'}"/>
+                                <Button x:Name="BtnDelete" Content="Удалить" Background="Red" Foreground="White" 
+                                    Loaded="BtnDelete_Loaded" Click="BtnDelete_Click"/>
                             </StackPanel>
                         </Grid>
                     </Border>
