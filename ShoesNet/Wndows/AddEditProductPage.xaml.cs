@@ -1,4 +1,4 @@
-﻿using ShoesNet.Model;
+using ShoesNet.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,20 +28,30 @@ namespace ShoesNet.Wndows
         private ShoesEntities db = new ShoesEntities();
         private string newPhotoPath = null;
         private bool isEditMode = false;
+        private static bool _isEditorOpen = false;
+        public static bool IsEditorOpen => _isEditorOpen;
+
         public AddEditProductPage(Товар selectedProduct)
         {
             InitializeComponent();
+            _isEditorOpen = true;
+            Unloaded += (_, __) => { _isEditorOpen = false; };
             if (selectedProduct != null)
             {
-                currentProduct = selectedProduct;
+                var loaded = db.Товар.FirstOrDefault(t => t.Артикул == selectedProduct.Артикул);
+                currentProduct = loaded ?? selectedProduct;
                 isEditMode = true;
                 TxtArticle.IsReadOnly = true;
+                TxtArticle.Visibility = Visibility.Visible;
+                TxtArticle.Text = currentProduct.Артикул;
                 this.Title = "Редактирование товара";
             }
             else
             {
                 isEditMode = false;
-                TxtArticle.Visibility = Visibility.Collapsed;
+                TxtArticle.IsReadOnly = false;
+                TxtArticle.Visibility = Visibility.Visible;
+                TxtArticle.Text = string.Empty;
                 this.Title = "Добавление нового товара";
             }
             DataContext = currentProduct;
@@ -55,17 +65,23 @@ namespace ShoesNet.Wndows
             {
                 if (!string.IsNullOrEmpty(currentProduct.Фото))
                 {
-                   
+
                     string path = System.IO.Path.Combine(Environment.CurrentDirectory, "Assets", currentProduct.Фото);
                     if (File.Exists(path))
                     {
-                        ProductImage.Source = new BitmapImage(new Uri(path));
+                        BitmapImage bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.UriSource = new Uri(path);
+                        bitmap.EndInit();
+
+                        ProductImage.Source = bitmap;
                     }
                 }
             }
             catch { }
         }
-        
+
         private void BtnSelectPhoto_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openDialog = new OpenFileDialog();
@@ -74,8 +90,12 @@ namespace ShoesNet.Wndows
             {
                 try
                 {
-                    
-                    BitmapImage img = new BitmapImage(new Uri(openDialog.FileName));
+
+                    BitmapImage img = new BitmapImage();
+                    img.BeginInit();
+                    img.CacheOption = BitmapCacheOption.OnLoad;
+                    img.UriSource = new Uri(openDialog.FileName);
+                    img.EndInit();
                     if (img.PixelWidth > 300 || img.PixelHeight > 200)
                     {
                         MessageBox.Show("Размер фото не должен превышать 300x200 пикселей!", "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -85,7 +105,7 @@ namespace ShoesNet.Wndows
                     newPhotoPath = openDialog.FileName;
                     ProductImage.Source = img;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     MessageBox.Show("Ошибка чтения изображения: " + ex.Message, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
@@ -93,36 +113,90 @@ namespace ShoesNet.Wndows
         }
         private void BtnSave_Click(object sender, RoutedEventArgs e)
         {
-            
+            // Явно читаем значения из UI, чтобы биндинг успел примениться к модели.
+            currentProduct.Артикул = TxtArticle.Text?.Trim();
+            currentProduct.НаименованиеТовара = TxtName.Text?.Trim();
+            currentProduct.ОписаниеТовара = TxtDescription.Text;
+            currentProduct.КатегорияТовара = CmbCategory.Text?.Trim();
+            currentProduct.Производитель = CmbManufacturer.Text?.Trim();
+            currentProduct.Поставщик = TxtSupplier.Text?.Trim();
+            currentProduct.ЕдиницаИзмерения = TxtUnit.Text?.Trim();
+
+            if (string.IsNullOrWhiteSpace(currentProduct.Артикул))
+            {
+                MessageBox.Show("Введите артикул товара!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(currentProduct.НаименованиеТовара))
             {
                 MessageBox.Show("Укажите наименование товара!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
+            if (string.IsNullOrWhiteSpace(currentProduct.КатегорияТовара))
+            {
+                MessageBox.Show("Выберите категорию товара!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(currentProduct.Производитель))
+            {
+                MessageBox.Show("Выберите производителя!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
 
-            
-            if (currentProduct.Цена < 0)
+            decimal price;
+            if (!decimal.TryParse(TxtPrice.Text, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, out price) &&
+                !decimal.TryParse(TxtPrice.Text, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out price))
+            {
+                MessageBox.Show("Введите корректную цену товара (число).", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (price < 0)
             {
                 MessageBox.Show("Стоимость товара не может быть отрицательной!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
+            currentProduct.Цена = price;
 
-            
-            if (currentProduct.КолВоНаСкладе < 0)
+            int discount;
+            if (!int.TryParse(TxtDiscount.Text, out discount))
+            {
+                MessageBox.Show("Введите корректную скидку (целое число).", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (discount < 0)
+            {
+                MessageBox.Show("Скидка не может быть отрицательной!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            currentProduct.ДействующаяСкидка = discount;
+
+            int qty;
+            if (!int.TryParse(TxtQuantity.Text, out qty))
+            {
+                MessageBox.Show("Введите корректное количество на складе (целое число).", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+            if (qty < 0)
             {
                 MessageBox.Show("Количество на складе не может быть отрицательным!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
+            currentProduct.КолВоНаСкладе = qty;
             try
             {
-                
                 if (newPhotoPath != null)
                 {
                     string assetsFolder = System.IO.Path.Combine(Environment.CurrentDirectory, "Assets");
+
+                    if (!System.IO.Directory.Exists(assetsFolder))
+                    {
+                        System.IO.Directory.CreateDirectory(assetsFolder);
+                    }
+
                     string newFileName = System.IO.Path.GetFileName(newPhotoPath);
                     string destinationPath = System.IO.Path.Combine(assetsFolder, newFileName);
 
-                   
                     if (isEditMode && !string.IsNullOrEmpty(currentProduct.Фото))
                     {
                         string oldPath = System.IO.Path.Combine(assetsFolder, currentProduct.Фото);
@@ -132,24 +206,21 @@ namespace ShoesNet.Wndows
                         }
                     }
 
-                   
                     if (!File.Exists(destinationPath))
                     {
                         File.Copy(newPhotoPath, destinationPath);
                     }
 
-                    currentProduct.Фото = newFileName; 
+                    currentProduct.Фото = newFileName;
                 }
 
-               
+
                 if (!isEditMode)
                 {
-                    
-                   
-                    if (string.IsNullOrEmpty(currentProduct.Артикул))
+                    if (db.Товар.Any(t => t.Артикул == currentProduct.Артикул))
                     {
-                        
-                        currentProduct.Артикул = "A" + new Random().Next(1000, 9999).ToString();
+                        MessageBox.Show("Товар с таким артикулом уже существует.", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
                     }
 
                     db.Товар.Add(currentProduct);
@@ -157,13 +228,22 @@ namespace ShoesNet.Wndows
 
                 db.SaveChanges();
                 MessageBox.Show("Данные успешно сохранены!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                NavigationService.GoBack(); 
+                NavigationService.GoBack();
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Ошибка сохранения: " + ex.Message, "Ошибка БД", MessageBoxButton.OK, MessageBoxImage.Error);
+                string errorMessage = ex.Message;
+                if (ex.InnerException != null)
+                {
+                    errorMessage += "\n\nДетали: " + ex.InnerException.Message;
+                    if (ex.InnerException.InnerException != null)
+                    {
+                        errorMessage += "\n\nПричина БД: " + ex.InnerException.InnerException.Message;
+                    }
+                }
+                MessageBox.Show(errorMessage, "Ошибка БД", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        
+
         }
     }
 }

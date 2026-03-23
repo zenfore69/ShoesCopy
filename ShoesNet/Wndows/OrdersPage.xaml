@@ -1,0 +1,51 @@
+<Page x:Class="ShoesNet.Wndows.OrdersPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="900"
+      Title="Заказы" Loaded="Page_Loaded">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <Button x:Name="BtnAddOrder"
+                    Content="Добавить заказ"
+                    Visibility="Collapsed"
+                    Click="BtnAddOrder_Click"/>
+        </StackPanel>
+
+        <ListView x:Name="LViewOrders"
+                  Grid.Row="1"
+                  MouseDoubleClick="LViewOrders_MouseDoubleClick">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="Артикул" Width="120" DisplayMemberBinding="{Binding Артикул}"/>
+                    <GridViewColumn Header="Статус заказа" Width="140" DisplayMemberBinding="{Binding СтатусЗаказа}"/>
+                    <GridViewColumn Header="Адрес пункта выдачи" Width="230" DisplayMemberBinding="{Binding АдресПунктаВыдачи}"/>
+                    <GridViewColumn Header="Дата заказа" Width="120" DisplayMemberBinding="{Binding ДатаЗаказа}"/>
+                    <GridViewColumn Header="Дата выдачи" Width="120" DisplayMemberBinding="{Binding ДатаДоставки}"/>
+                    <GridViewColumn Header="" Width="90">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button x:Name="BtnDelete"
+                                        Content="Удалить"
+                                        Background="Red"
+                                        Foreground="White"
+                                        Loaded="BtnDelete_Loaded"
+                                        Click="BtnDelete_Click"
+                                        Margin="5,0,5,0"
+                                        Padding="5"/>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </Grid>
+</Page>
+

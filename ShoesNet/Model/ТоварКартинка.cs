@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +8,19 @@ namespace ShoesNet.Model
 {
     public partial class Товар
     {
+        // Рассчитываем итоговую цену с учетом скидки (используется в UI).
+        public Nullable<decimal> ЦенаСоСкидкой
+        {
+            get
+            {
+                if (!Цена.HasValue || !ДействующаяСкидка.HasValue || ДействующаяСкидка.Value <= 0)
+                    return null;
+
+                // Цена и скидка в БД хранятся как int (без десятичных), переводим в decimal для корректного расчета.
+                return Цена.Value - (Цена.Value * ДействующаяСкидка.Value / 100m);
+            }
+        }
+
         public string ПолныйПутьКФото
         {
             get
@@ -16,6 +29,21 @@ namespace ShoesNet.Model
                     return "/Assets/picture.png"; 
 
                 return $"/Assets/{Фото}";
+            }
+        }
+        public bool ЕстьСкидка
+        {
+            get
+            {
+                return ДействующаяСкидка != null && ДействующаяСкидка > 0;
+            }
+        }
+
+        public bool СкидкаБольше15
+        {
+            get
+            {
+                return ДействующаяСкидка != null && ДействующаяСкидка > 15;
             }
         }
     }

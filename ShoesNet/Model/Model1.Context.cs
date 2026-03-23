@@ -25,7 +25,6 @@ namespace ShoesNet.Model
             throw new UnintentionalCodeFirstException();
         }
     
-        public DbSet<sysdiagrams> sysdiagrams { get; set; }
         public DbSet<Заказ> Заказ { get; set; }
         public DbSet<Пользователи> Пользователи { get; set; }
         public DbSet<ПунктВыдачи> ПунктВыдачи { get; set; }

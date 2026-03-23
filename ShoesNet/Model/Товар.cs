@@ -22,7 +22,7 @@ namespace ShoesNet.Model
         public string Артикул { get; set; }
         public string НаименованиеТовара { get; set; }
         public string ЕдиницаИзмерения { get; set; }
-        public Nullable<int> Цена { get; set; }
+        public Nullable<decimal> Цена { get; set; }
         public string Поставщик { get; set; }
         public string Производитель { get; set; }
         public string КатегорияТовара { get; set; }

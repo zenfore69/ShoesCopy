@@ -1,4 +1,4 @@
-﻿using ShoesNet.Classes;
+using ShoesNet.Classes;
 using ShoesNet.Model;
 using System;
 using System.Collections.Generic;
@@ -25,7 +25,7 @@ namespace ShoesNet.Wndows
         {
             InitializeComponent();
             BtnAddProduct.Click += BtnAddProduct_Click;
-            TxtUserName.Text = $"Вы вошли как: {CurrentUser.FullName}";
+            // Текст о текущем пользователе отображается в MainWindow (рядом с кнопкой "Назад").
 
             if (CurrentUser.RoleId == "Менеджер" || CurrentUser.RoleId == "Администратор") 
             {
@@ -37,29 +37,42 @@ namespace ShoesNet.Wndows
                 
             }
 
-            if (CurrentUser.RoleId == "Гость")
+            if (CurrentUser.RoleId == "Гость" || CurrentUser.RoleId == "Авторизированный клиент")
             {
                 TxtSearch.IsEnabled = false;
                 CmbSort.IsEnabled = false;
                 CmbFilter.IsEnabled = false;
             }
 
-            var manufacturers = db.Товар.Select(p => p.Производитель).Distinct().ToList();
-            manufacturers.Insert(0, "Все производители");
-            CmbFilter.ItemsSource = manufacturers;
-            CmbFilter.SelectedIndex = 0;
+            ReloadSuppliers();
         }
 
         private void BtnAddProduct_Click(object sender, RoutedEventArgs e)
         {
-            //throw new NotImplementedException();
+            if (AddEditProductPage.IsEditorOpen)
+            {
+                MessageBox.Show("Откройте только одно окно редактирования товара за раз.", "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             NavigationService.Navigate(new AddEditProductPage(null));
+        }
+
+        private void BtnOrders_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentUser.RoleId == "Гость") return;
+            NavigationService.Navigate(new OrdersPage());
         }
 
         private void LViewProducts_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             
             if (CurrentUser.RoleId != "Администратор") return; 
+
+            if (AddEditProductPage.IsEditorOpen)
+            {
+                MessageBox.Show("Откройте только одно окно редактирования товара за раз.", "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             if (LViewProducts.SelectedItem is Товар selectedProduct)
             {
@@ -71,6 +84,8 @@ namespace ShoesNet.Wndows
             var button = sender as Button;
             var productForDelete = button.DataContext as Товар;
             if (productForDelete == null) return;
+
+            if (CurrentUser.RoleId != "Администратор") return;
     
             bool hasOrders = db.СоставЗаказ.Any(sz => sz.Артикул == productForDelete.Артикул);
             if (hasOrders)
@@ -114,6 +129,52 @@ namespace ShoesNet.Wndows
             UpdateData();
         }
 
+        // Вызывается из MainWindow при навигации.
+        public void Refresh()
+        {
+            ReloadSuppliers();
+            UpdateData();
+        }
+
+        private void ReloadSuppliers()
+        {
+            if (CmbFilter == null) return;
+
+            var currentSelected = CmbFilter.SelectedItem?.ToString();
+            var normalizedSelected = NormalizeSupplier(currentSelected);
+
+            // 1. Вытаскиваем сырые данные из БД понятным для SQL способом (проверка на null и пустоту)
+            var rawSuppliers = db.Товар
+                .Select(p => p.Поставщик)
+                .Where(s => s != null && s != "")
+                .ToList(); // <--- ВАЖНО: Здесь запрос уходит в БД, и мы получаем данные в оперативную память
+
+            // 2. Теперь работаем с объектами в памяти (LINQ to Objects), где работают любые методы C#
+            var suppliers = rawSuppliers
+                .Where(s => !string.IsNullOrWhiteSpace(s)) // Теперь это работает без ошибок
+                .Select(s => NormalizeSupplier(s))         // И кастомные методы тоже работают
+                .Distinct()
+                .OrderBy(s => s)
+                .ToList();
+
+            suppliers.Insert(0, "Все поставщики");
+            CmbFilter.ItemsSource = suppliers;
+
+            if (string.IsNullOrWhiteSpace(normalizedSelected) || normalizedSelected == NormalizeSupplier("Все поставщики"))
+            {
+                CmbFilter.SelectedIndex = 0;
+                return;
+            }
+
+            int idx = suppliers.FindIndex(s => NormalizeSupplier(s) == normalizedSelected);
+            CmbFilter.SelectedIndex = idx >= 0 ? idx : 0;
+        }
+
+        private string NormalizeSupplier(string value)
+        {
+            return (value ?? string.Empty).Replace('\u00A0', ' ').Trim();
+        }
+
         private void FilterData(object sender, SelectionChangedEventArgs e) => UpdateData();
         private void FilterData(object sender, TextChangedEventArgs e) => UpdateData();
 
@@ -129,7 +190,12 @@ namespace ShoesNet.Wndows
             {
                 string searchText = TxtSearch.Text.ToLower();
                 currentProducts = currentProducts.Where(p =>
+                    (p.Артикул != null && p.Артикул.ToLower().Contains(searchText)) ||
                     (p.НаименованиеТовара != null && p.НаименованиеТовара.ToLower().Contains(searchText)) ||
+                    (p.КатегорияТовара != null && p.КатегорияТовара.ToLower().Contains(searchText)) ||
+                    (p.Производитель != null && p.Производитель.ToLower().Contains(searchText)) ||
+                    (p.Поставщик != null && p.Поставщик.ToLower().Contains(searchText)) ||
+                    (p.ЕдиницаИзмерения != null && p.ЕдиницаИзмерения.ToLower().Contains(searchText)) ||
                     (p.ОписаниеТовара != null && p.ОписаниеТовара.ToLower().Contains(searchText))
                 ).ToList();
             }
@@ -140,18 +206,18 @@ namespace ShoesNet.Wndows
 
                 if (CmbFilter.SelectedItem != null)
                 {
-                    string selectedMaker = CmbFilter.SelectedItem.ToString();
-                    currentProducts = currentProducts.Where(p => p.Производитель == selectedMaker).ToList();
+                    string selectedSupplier = CmbFilter.SelectedItem.ToString();
+                    currentProducts = currentProducts.Where(p => (p.Поставщик ?? string.Empty).Replace('\u00A0', ' ').Trim() == selectedSupplier).ToList();
                 }
             }
 
             if (CmbSort.SelectedIndex == 1) 
             {
-                currentProducts = currentProducts.OrderBy(p => p.Цена).ToList();
+                currentProducts = currentProducts.OrderBy(p => p.КолВоНаСкладе ?? 0).ToList();
             }
             else if (CmbSort.SelectedIndex == 2) 
             {
-                currentProducts = currentProducts.OrderByDescending(p => p.Цена).ToList();
+                currentProducts = currentProducts.OrderByDescending(p => p.КолВоНаСкладе ?? 0).ToList();
             }
 
             LViewProducts.ItemsSource = currentProducts;

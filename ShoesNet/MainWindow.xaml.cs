@@ -1,4 +1,6 @@
-﻿using ShoesNet.Model;
+using ShoesNet.Classes;
+using ShoesNet.Model;
+using ShoesNet.Wndows;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,6 +37,23 @@ namespace ShoesNet
         private void MainFrame_Navigated(object sender, NavigationEventArgs e)
         {
             BtnBack.Visibility = MainFrame.CanGoBack ? Visibility.Visible : Visibility.Hidden;
+
+            // Обновляем данные на страницах после навигации (в т.ч. при возврате назад).
+            if (e.Content is CatalogPage catalog)
+                catalog.Refresh();
+            else if (e.Content is OrdersPage orders)
+                orders.Refresh();
+
+            // Сообщение о текущем пользователе наверху справа (рядом с кнопкой "Назад").
+            if (e.Content is AuthPage)
+            {
+                TxtUserTop.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                TxtUserTop.Visibility = Visibility.Visible;
+                TxtUserTop.Text = $"Вы вошли как: {CurrentUser.FullName}";
+            }
         }
 
     }

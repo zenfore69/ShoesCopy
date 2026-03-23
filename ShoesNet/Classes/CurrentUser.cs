@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,5 +10,6 @@ namespace ShoesNet.Classes
     {
         public static String RoleId { get; set; } = "Гость";
         public static string FullName { get; set; } = "Гость";
+        public static int UserId { get; set; } = 0;
     }
 }

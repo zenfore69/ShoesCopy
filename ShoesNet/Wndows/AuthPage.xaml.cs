@@ -1,4 +1,4 @@
-﻿using ShoesNet.Model;
+using ShoesNet.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,6 +34,7 @@ namespace ShoesNet.Wndows
             {
                 CurrentUser.RoleId = user.РольСотрудника;
                 CurrentUser.FullName = user.ФИО;
+                CurrentUser.UserId = user.Код;
                 NavigationService.Navigate(new CatalogPage());
             }
             else
@@ -47,6 +48,7 @@ namespace ShoesNet.Wndows
         {
             CurrentUser.RoleId = "Гость";
             CurrentUser.FullName = "Гость";
+            CurrentUser.UserId = 0;
             NavigationService.Navigate(new CatalogPage());
         }
     }
