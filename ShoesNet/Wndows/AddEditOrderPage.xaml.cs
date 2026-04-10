@@ -3,6 +3,7 @@ using ShoesNet.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Navigation;
@@ -14,16 +15,31 @@ namespace ShoesNet.Wndows
         private Заказ currentOrder = new Заказ();
         private ShoesEntities db = new ShoesEntities();
         private bool isEditMode = false;
+        private static bool _isEditorOpen = false;
+        public static bool IsEditorOpen => _isEditorOpen;
 
         public AddEditOrderPage(Заказ selectedOrder)
         {
             InitializeComponent();
+            if (CurrentUser.RoleId != "Администратор")
+            {
+                MessageBox.Show("Редактировать заказы может только администратор.", "Доступ запрещен", MessageBoxButton.OK, MessageBoxImage.Warning);
+                NavigationService?.GoBack();
+                return;
+            }
+            _isEditorOpen = true;
+            Unloaded += (_, __) => { _isEditorOpen = false; };
 
-            // Dropdown статусов и пунктов выдачи.
+            // Важно: LINQ to Entities не поддерживает IsNullOrWhiteSpace/Trim в выражениях для SQL.
+            // Поэтому сначала забираем значения, а фильтрацию делаем уже в памяти.
             var statuses = db.Заказ
                 .Select(o => o.СтатусЗаказа)
-                .Where(s => !string.IsNullOrWhiteSpace(s))
                 .Distinct()
+                .ToList()
+                .Where(s => s != null && s.Trim() != string.Empty)
+                .Select(s => s.Trim())
+                .Distinct()
+                .OrderBy(s => s)
                 .ToList();
 
             if (statuses.Count == 0)
@@ -33,29 +49,34 @@ namespace ShoesNet.Wndows
             }
             CmbStatus.ItemsSource = statuses;
 
-            CmbPickupPoint.ItemsSource = db.ПунктВыдачи.ToList();
-
             DpOrderDate.SelectedDate = DateTime.Today;
             DpPickupDate.SelectedDate = DateTime.Today;
 
             if (selectedOrder != null)
             {
                 var loaded = db.Заказ.FirstOrDefault(o => o.НомерЗаказа == selectedOrder.НомерЗаказа);
-                currentOrder = loaded ?? selectedOrder;
+                if (loaded == null)
+                {
+                    MessageBox.Show("Заказ не найден в базе данных.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    _isEditorOpen = false;
+                    return;
+                }
+
+                currentOrder = loaded;
                 isEditMode = true;
                 this.Title = "Редактирование заказа";
 
-                CmbStatus.SelectedItem = currentOrder.СтатусЗаказа;
-                CmbPickupPoint.SelectedValue = currentOrder.КодАдресПунктВыдачи;
+                CmbStatus.SelectedItem = currentOrder.СтатусЗаказа?.Trim();
+                TxtPickupAddress.Text = db.ПунктВыдачи.FirstOrDefault(p => p.Код == currentOrder.КодАдресПунктВыдачи)?.Адрес;
 
                 TxtArticle.Text = db.СоставЗаказ
                     .Where(s => s.КодЗаказа == currentOrder.НомерЗаказа)
                     .Select(s => s.Артикул)
                     .FirstOrDefault();
 
-                if (DateTime.TryParse(currentOrder.ДатаЗаказа, out var orderDate))
+                if (DateTime.TryParse(currentOrder.ДатаЗаказа, new CultureInfo("ru-RU"), DateTimeStyles.None, out var orderDate))
                     DpOrderDate.SelectedDate = orderDate;
-                if (DateTime.TryParse(currentOrder.ДатаДоставки, out var pickupDate))
+                if (DateTime.TryParse(currentOrder.ДатаДоставки, new CultureInfo("ru-RU"), DateTimeStyles.None, out var pickupDate))
                     DpPickupDate.SelectedDate = pickupDate;
             }
         }
@@ -64,6 +85,7 @@ namespace ShoesNet.Wndows
         {
             try
             {
+                if (CurrentUser.RoleId != "Администратор") return;
                 string article = TxtArticle.Text?.Trim();
                 if (string.IsNullOrWhiteSpace(article))
                 {
@@ -84,9 +106,11 @@ namespace ShoesNet.Wndows
                     return;
                 }
 
-                if (CmbPickupPoint.SelectedValue == null)
+                string pickupAddress = TxtPickupAddress.Text?.Trim();
+                pickupAddress = NormalizeText(pickupAddress);
+                if (string.IsNullOrWhiteSpace(pickupAddress))
                 {
-                    MessageBox.Show("Выберите пункт выдачи.", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Введите адрес пункта выдачи.", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
                     return;
                 }
 
@@ -104,10 +128,22 @@ namespace ShoesNet.Wndows
                     db.Заказ.Add(currentOrder);
                 }
 
-                currentOrder.СтатусЗаказа = status;
-                currentOrder.ДатаЗаказа = DpOrderDate.SelectedDate.Value.ToString("yyyy-MM-dd");
-                currentOrder.ДатаДоставки = DpPickupDate.SelectedDate.Value.ToString("yyyy-MM-dd");
-                currentOrder.КодАдресПунктВыдачи = Convert.ToInt32(CmbPickupPoint.SelectedValue);
+                currentOrder.СтатусЗаказа = status.Trim();
+                // В SQL данные дат в примерах хранятся как "dd.MM.yyyy" (nvarchar).
+                currentOrder.ДатаЗаказа = DpOrderDate.SelectedDate.Value.ToString("dd.MM.yyyy", new CultureInfo("ru-RU"));
+                currentOrder.ДатаДоставки = DpPickupDate.SelectedDate.Value.ToString("dd.MM.yyyy", new CultureInfo("ru-RU"));
+
+                // Ищем пункт выдачи по введенному адресу (как в макете: поле текстовое).
+                // NormalizeText включает замену NBSP и Trim, что может не транслироваться в SQL.
+                // Поэтому сравниваем в памяти.
+                var pickups = db.ПунктВыдачи.ToList();
+                var pickup = pickups.FirstOrDefault(p => NormalizeText(p.Адрес) == pickupAddress);
+                if (pickup == null)
+                {
+                    MessageBox.Show("По введенному адресу пункт выдачи не найден в базе данных.", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+                currentOrder.КодАдресПунктВыдачи = pickup.Код;
                 currentOrder.КодПользователя = CurrentUser.UserId;
 
                 if (string.IsNullOrWhiteSpace(currentOrder.КодДляПолучения))
@@ -137,6 +173,11 @@ namespace ShoesNet.Wndows
             {
                 MessageBox.Show(ex.Message, "Ошибка БД", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private string NormalizeText(string value)
+        {
+            return (value ?? string.Empty).Replace('\u00A0', ' ').Trim();
         }
     }
 }

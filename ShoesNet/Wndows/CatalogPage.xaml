@@ -6,6 +6,7 @@
       xmlns:local="clr-namespace:ShoesNet.Wndows"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
+      MinWidth="900" MinHeight="600"
       Title="Каталог товаров" Loaded="Page_Loaded">
 
     <Grid Margin="10">
@@ -51,60 +52,100 @@
 
         <ListView x:Name="LViewProducts"
                   Grid.Row="2"
+                  HorizontalContentAlignment="Stretch"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                   MouseDoubleClick="LViewProducts_MouseDoubleClick">
             <ListView.ItemTemplate>
                 <DataTemplate>
-                    <Border x:Name="ProductBorder" BorderThickness="1" BorderBrush="Black" Margin="5" Padding="10">
+                    <Border x:Name="ProductBorder"
+                            BorderThickness="2"
+                            BorderBrush="Black"
+                            Margin="5"
+                            Padding="10"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top"
+                            Height="250">
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="170"/>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="220"/>
+                                <ColumnDefinition Width="200"/>
                             </Grid.ColumnDefinitions>
 
-                            <Image Source="{Binding ПолныйПутьКФото}" Width="100" Height="100" VerticalAlignment="Center"/>
+                            <!-- Фото -->
+                            <Border Grid.Column="0"
+                                    BorderThickness="1"
+                                    BorderBrush="Black"
+                                    Margin="0,0,10,0"
+                                    Padding="6"
+                                    CornerRadius="0">
+                                <Image Source="{Binding ПолныйПутьКФото}"
+                                       Stretch="Uniform"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Width="130"
+                                       Height="130"/>
+                            </Border>
 
-                            <StackPanel Grid.Column="1" Margin="10,0,10,0" VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                    <TextBlock Text="{Binding КатегорияТовара}" FontSize="16"/>
-                                    <TextBlock Text=" | " FontSize="16"/>
-                                    <TextBlock Text="{Binding НаименованиеТовара}" FontWeight="Bold" FontSize="16"/>
-                                </StackPanel>
+                            <!-- Основная информация -->
+                            <StackPanel Grid.Column="1"
+                                        Margin="0,0,10,0"
+                                        VerticalAlignment="Center">
+                                <TextBlock Text="{Binding КатегорияТовара}"
+                                           FontWeight="Bold"
+                                           FontSize="15"/>
+                                <TextBlock Text="{Binding НаименованиеТовара}"
+                                           FontWeight="Bold"
+                                           FontSize="15"
+                                           Margin="0,0,0,6"/>
 
+                                <!-- Ограничиваем высоту текста, чтобы карточки оставались одинаковыми по размеру -->
                                 <TextBlock Text="{Binding ОписаниеТовара, StringFormat='Описание товара: {0}'}"
                                            TextWrapping="Wrap"
-                                           Margin="0,0,0,5"/>
+                                           Margin="0,0,0,2"
+                                           TextTrimming="CharacterEllipsis"
+                                           Height="54"/>
+                                <TextBlock Text="{Binding Производитель, StringFormat='Производитель: {0}'}"
+                                           Margin="0,0,0,2"/>
+                                <TextBlock Text="{Binding Поставщик, StringFormat='Поставщик: {0}'}"
+                                           Margin="0,0,0,2"/>
 
-                                <TextBlock Text="{Binding Производитель, StringFormat='Производитель: {0}'}" Margin="0,0,0,2"/>
-                                <TextBlock Text="{Binding Поставщик, StringFormat='Поставщик: {0}'}"/>
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
-                                    <TextBlock Text="Цена: " FontSize="16"/>
-                                    <TextBlock x:Name="TxtOldPrice" Text="{Binding Цена}" FontSize="16"/>
-                                    <TextBlock x:Name="TxtNewPrice"
-                                               Text="{Binding ЦенаСоСкидкой, StringFormat=' {0}'}"
+                                <!-- Цена: старая (зачёркнутая при скидке) и итоговая со скидкой -->
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <TextBlock Text="Цена: " />
+                                    <TextBlock x:Name="TxtOldPrice"
+                                               Text="{Binding Цена}"
                                                Visibility="Collapsed"
+                                               Foreground="Red"/>
+                                    <TextBlock x:Name="TxtNewPrice"
+                                               Text="{Binding ЦенаСоСкидкой}"
+                                               Visibility="Collapsed"
+                                               Margin="6,0,0,0"
                                                Foreground="Black"
-                                               FontSize="16"
                                                FontWeight="Bold"/>
-                                    <TextBlock Text=" руб." FontSize="16"/>
+                                    <TextBlock Text="руб." Margin="6,0,0,0"/>
                                 </StackPanel>
 
-                                <TextBlock Text="{Binding ЕдиницаИзмерения, StringFormat='Единица измерения: {0}'}" Margin="0,0,0,2"/>
-                                <TextBlock Text="{Binding КолВоНаСкладе, StringFormat='Количество на складе: {0}'}" Margin="0,0,0,2"/>
-                                <TextBlock Text="{Binding ДействующаяСкидка, StringFormat='Действующая скидка: {0}%'}"/>
+                                <TextBlock Margin="0,0,0,2" Text="{Binding ЕдиницаИзмерения, StringFormat='Единица измерения: {0}'}"/>
+                                <TextBlock Margin="0,0,0,2" Text="{Binding КолВоНаСкладе, StringFormat='Количество на складе: {0}'}"/>
+                            </StackPanel>
+
+                            <!-- Скидка и кнопка удаления -->
+                            <StackPanel Grid.Column="2" VerticalAlignment="Stretch">
+                                <Border BorderThickness="1" BorderBrush="Black" Padding="6" Margin="0,0,0,8">
+                                    <TextBlock Text="{Binding ДействующаяСкидка, StringFormat='Действующая скидка: {0}%'}"
+                                               FontWeight="Bold"/>
+                                </Border>
 
                                 <Button x:Name="BtnDelete"
                                         Content="Удалить"
-                                        Background="Red"
+                                        Background="#00FA9A"
                                         Foreground="White"
                                         Loaded="BtnDelete_Loaded"
                                         Click="BtnDelete_Click"
-                                        Margin="0,10,0,0"
-                                        Padding="5"/>
+                                        Margin="0"
+                                        Padding="5"
+                                        VerticalAlignment="Bottom"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -119,6 +160,7 @@
                         </DataTrigger>
 
                         <DataTrigger Binding="{Binding ЕстьСкидка}" Value="True">
+                            <Setter TargetName="TxtOldPrice" Property="Visibility" Value="Visible"/>
                             <Setter TargetName="TxtOldPrice" Property="TextDecorations" Value="Strikethrough"/>
                             <Setter TargetName="TxtOldPrice" Property="Foreground" Value="Red"/>
                             <Setter TargetName="TxtNewPrice" Property="Visibility" Value="Visible"/>

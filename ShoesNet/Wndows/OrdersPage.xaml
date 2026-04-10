@@ -5,6 +5,7 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="900"
+      MinWidth="900" MinHeight="600"
       Title="Заказы" Loaded="Page_Loaded">
     <Grid Margin="10">
         <Grid.RowDefinitions>
@@ -21,30 +22,58 @@
 
         <ListView x:Name="LViewOrders"
                   Grid.Row="1"
-                  MouseDoubleClick="LViewOrders_MouseDoubleClick">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="Артикул" Width="120" DisplayMemberBinding="{Binding Артикул}"/>
-                    <GridViewColumn Header="Статус заказа" Width="140" DisplayMemberBinding="{Binding СтатусЗаказа}"/>
-                    <GridViewColumn Header="Адрес пункта выдачи" Width="230" DisplayMemberBinding="{Binding АдресПунктаВыдачи}"/>
-                    <GridViewColumn Header="Дата заказа" Width="120" DisplayMemberBinding="{Binding ДатаЗаказа}"/>
-                    <GridViewColumn Header="Дата выдачи" Width="120" DisplayMemberBinding="{Binding ДатаДоставки}"/>
-                    <GridViewColumn Header="" Width="90">
-                        <GridViewColumn.CellTemplate>
-                            <DataTemplate>
+                  SelectionMode="Single"
+                  HorizontalContentAlignment="Stretch"
+                  MouseLeftButtonUp="LViewOrders_MouseLeftButtonUp"
+                  ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Border x:Name="OrderBorder"
+                            BorderBrush="Black"
+                            BorderThickness="2"
+                            Margin="5"
+                            Padding="12"
+                            Height="180"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Top">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="210"/>
+                                
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Orientation="Vertical">
+                                <TextBlock Text="Артикул заказа" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding Артикул}" Margin="0,0,0,6"/>
+
+                                <TextBlock Text="Статус заказа" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding СтатусЗаказа}" Margin="0,0,0,6"/>
+
+                                <TextBlock Text="Адрес пункта выдачи (текст)" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding АдресПунктаВыдачи}" TextWrapping="Wrap" Margin="0,0,0,6"/>
+
+                                <TextBlock Text="Дата заказа" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding ДатаЗаказа}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Vertical" Margin="10,0,0,0">
+                                <TextBlock Text="Дата доставки" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding ДатаДоставки}" Margin="0,6,0,0"/>
+
                                 <Button x:Name="BtnDelete"
                                         Content="Удалить"
-                                        Background="Red"
+                                        Background="#00FA9A"
                                         Foreground="White"
                                         Loaded="BtnDelete_Loaded"
                                         Click="BtnDelete_Click"
-                                        Margin="5,0,5,0"
-                                        Padding="5"/>
-                            </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                </GridView>
-            </ListView.View>
+                                        Margin="0,14,0,0"
+                                        Padding="6,2"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListView.ItemTemplate>
         </ListView>
     </Grid>
 </Page>

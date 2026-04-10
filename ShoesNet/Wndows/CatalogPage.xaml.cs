@@ -25,7 +25,7 @@ namespace ShoesNet.Wndows
         {
             InitializeComponent();
             BtnAddProduct.Click += BtnAddProduct_Click;
-            // Текст о текущем пользователе отображается в MainWindow (рядом с кнопкой "Назад").
+
 
             if (CurrentUser.RoleId == "Менеджер" || CurrentUser.RoleId == "Администратор") 
             {
@@ -129,7 +129,7 @@ namespace ShoesNet.Wndows
             UpdateData();
         }
 
-        // Вызывается из MainWindow при навигации.
+
         public void Refresh()
         {
             ReloadSuppliers();
@@ -143,16 +143,15 @@ namespace ShoesNet.Wndows
             var currentSelected = CmbFilter.SelectedItem?.ToString();
             var normalizedSelected = NormalizeSupplier(currentSelected);
 
-            // 1. Вытаскиваем сырые данные из БД понятным для SQL способом (проверка на null и пустоту)
             var rawSuppliers = db.Товар
                 .Select(p => p.Поставщик)
                 .Where(s => s != null && s != "")
-                .ToList(); // <--- ВАЖНО: Здесь запрос уходит в БД, и мы получаем данные в оперативную память
+                .ToList(); 
 
-            // 2. Теперь работаем с объектами в памяти (LINQ to Objects), где работают любые методы C#
+   
             var suppliers = rawSuppliers
-                .Where(s => !string.IsNullOrWhiteSpace(s)) // Теперь это работает без ошибок
-                .Select(s => NormalizeSupplier(s))         // И кастомные методы тоже работают
+                .Where(s => !string.IsNullOrWhiteSpace(s)) 
+                .Select(s => NormalizeSupplier(s))         
                 .Distinct()
                 .OrderBy(s => s)
                 .ToList();

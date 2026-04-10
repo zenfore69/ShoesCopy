@@ -64,7 +64,9 @@ namespace ShoesNet.Wndows
                     rows.Add(new OrderRowViewModel
                     {
                         Заказ = order,
-                        Артикул = string.Join(", ", articles),
+                        // В задании показывается поле "артикул" у заказа. Если в заказе несколько позиций,
+                        // показываем первый артикул (остальные можно будет заменить при редактировании).
+                        Артикул = articles.FirstOrDefault(),
                         СтатусЗаказа = order.СтатусЗаказа,
                         АдресПунктаВыдачи = pickup?.Адрес,
                         ДатаЗаказа = order.ДатаЗаказа,
@@ -87,13 +89,43 @@ namespace ShoesNet.Wndows
             NavigationService.Navigate(new AddEditOrderPage(null));
         }
 
+        // Прокси для возможной "старой" ссылки из auto-generated designer-файлов.
+        // Реальная логика редактирования — по событию клика мышью.
         private void LViewOrders_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+            => LViewOrders_MouseLeftButtonUp(sender, e);
+
+        private void LViewOrders_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (CurrentUser.RoleId != "Администратор") return;
-            if (LViewOrders.SelectedItem is OrderRowViewModel selectedRow)
+            if (AddEditOrderPage.IsEditorOpen)
+            {
+                MessageBox.Show("Откройте только одно окно редактирования заказа за раз.", "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (IsClickOnDeleteButton(e.OriginalSource)) return;
+
+            if (LViewOrders.SelectedItem is OrderRowViewModel selectedRow && selectedRow?.Заказ != null)
             {
                 NavigationService.Navigate(new AddEditOrderPage(selectedRow.Заказ));
             }
+        }
+
+        private bool IsClickOnDeleteButton(object originalSource)
+        {
+            DependencyObject obj = originalSource as DependencyObject;
+            while (obj != null)
+            {
+                if (obj is Button btn)
+                {
+                    // Кнопка "Удалить" находится внутри DataTemplate, поэтому имя совпадает у всех экземпляров.
+                    if (btn.Name == "BtnDelete" || (btn.Content?.ToString() == "Удалить"))
+                        return true;
+                }
+
+                obj = VisualTreeHelper.GetParent(obj);
+            }
+            return false;
         }
 
         private void BtnDelete_Loaded(object sender, RoutedEventArgs e)

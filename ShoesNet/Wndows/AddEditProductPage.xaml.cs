@@ -127,7 +127,6 @@ namespace ShoesNet.Wndows
                 MessageBox.Show("Введите артикул товара!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-
             if (string.IsNullOrWhiteSpace(currentProduct.НаименованиеТовара))
             {
                 MessageBox.Show("Укажите наименование товара!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -169,6 +168,11 @@ namespace ShoesNet.Wndows
                 MessageBox.Show("Скидка не может быть отрицательной!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
+            if (discount > 99)   
+            {
+                MessageBox.Show("Скидка не может превышать 99%!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
             currentProduct.ДействующаяСкидка = discount;
 
             int qty;
@@ -183,17 +187,16 @@ namespace ShoesNet.Wndows
                 return;
             }
             currentProduct.КолВоНаСкладе = qty;
+
             try
             {
                 if (newPhotoPath != null)
                 {
                     string assetsFolder = System.IO.Path.Combine(Environment.CurrentDirectory, "Assets");
-
                     if (!System.IO.Directory.Exists(assetsFolder))
                     {
                         System.IO.Directory.CreateDirectory(assetsFolder);
                     }
-
                     string newFileName = System.IO.Path.GetFileName(newPhotoPath);
                     string destinationPath = System.IO.Path.Combine(assetsFolder, newFileName);
 
@@ -205,15 +208,12 @@ namespace ShoesNet.Wndows
                             File.Delete(oldPath);
                         }
                     }
-
                     if (!File.Exists(destinationPath))
                     {
                         File.Copy(newPhotoPath, destinationPath);
                     }
-
                     currentProduct.Фото = newFileName;
                 }
-
 
                 if (!isEditMode)
                 {
@@ -222,7 +222,6 @@ namespace ShoesNet.Wndows
                         MessageBox.Show("Товар с таким артикулом уже существует.", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }
-
                     db.Товар.Add(currentProduct);
                 }
 
@@ -243,7 +242,6 @@ namespace ShoesNet.Wndows
                 }
                 MessageBox.Show(errorMessage, "Ошибка БД", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-
         }
     }
 }

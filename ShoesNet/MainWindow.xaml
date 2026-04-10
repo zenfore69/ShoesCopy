@@ -6,6 +6,9 @@
         xmlns:local="clr-namespace:ShoesNet"
         mc:Ignorable="d"
         Title="ООО Обувь" Height="600" Width="900" Icon="/Assets/Icon.ico" WindowStartupLocation="CenterScreen">
+    <!-- Минимальные размеры окна, чтобы содержимое карточек не сжималось -->
+    <Window.MinWidth>900</Window.MinWidth>
+    <Window.MinHeight>600</Window.MinHeight>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
