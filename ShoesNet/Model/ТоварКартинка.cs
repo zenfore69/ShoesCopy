@@ -8,7 +8,7 @@ namespace ShoesNet.Model
 {
     public partial class Товар
     {
-        // Рассчитываем итоговую цену с учетом скидки (используется в UI).
+
         public Nullable<decimal> ЦенаСоСкидкой
         {
             get
@@ -16,7 +16,7 @@ namespace ShoesNet.Model
                 if (!Цена.HasValue || !ДействующаяСкидка.HasValue || ДействующаяСкидка.Value <= 0)
                     return null;
 
-                // Цена и скидка в БД хранятся как int (без десятичных), переводим в decimal для корректного расчета.
+
                 return Цена.Value - (Цена.Value * ДействующаяСкидка.Value / 100m);
             }
         }

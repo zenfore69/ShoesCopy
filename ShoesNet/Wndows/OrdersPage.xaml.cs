@@ -42,7 +42,7 @@ namespace ShoesNet.Wndows
             UpdateData();
         }
 
-        // Вызывается из MainWindow при навигации.
+
         public void Refresh() => UpdateData();
 
         private void UpdateData()
@@ -64,8 +64,6 @@ namespace ShoesNet.Wndows
                     rows.Add(new OrderRowViewModel
                     {
                         Заказ = order,
-                        // В задании показывается поле "артикул" у заказа. Если в заказе несколько позиций,
-                        // показываем первый артикул (остальные можно будет заменить при редактировании).
                         Артикул = articles.FirstOrDefault(),
                         СтатусЗаказа = order.СтатусЗаказа,
                         АдресПунктаВыдачи = pickup?.Адрес,
@@ -75,8 +73,6 @@ namespace ShoesNet.Wndows
                 }
                 catch
                 {
-                    // Если конкретная строка не смогла загрузиться (например, битые ссылки в данных),
-                    // всё равно показываем остальные заказы.
                 }
             }
 
@@ -89,8 +85,6 @@ namespace ShoesNet.Wndows
             NavigationService.Navigate(new AddEditOrderPage(null));
         }
 
-        // Прокси для возможной "старой" ссылки из auto-generated designer-файлов.
-        // Реальная логика редактирования — по событию клика мышью.
         private void LViewOrders_MouseDoubleClick(object sender, MouseButtonEventArgs e)
             => LViewOrders_MouseLeftButtonUp(sender, e);
 
@@ -118,7 +112,6 @@ namespace ShoesNet.Wndows
             {
                 if (obj is Button btn)
                 {
-                    // Кнопка "Удалить" находится внутри DataTemplate, поэтому имя совпадает у всех экземпляров.
                     if (btn.Name == "BtnDelete" || (btn.Content?.ToString() == "Удалить"))
                         return true;
                 }
@@ -148,7 +141,6 @@ namespace ShoesNet.Wndows
                 if (MessageBox.Show("Вы уверены, что хотите удалить заказ?", "Внимание", MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes)
                     return;
 
-                // Сначала удаляем состав заказа, затем сам заказ (чтобы не упереться в FK).
                 var compositions = db.СоставЗаказ.Where(s => s.КодЗаказа == selectedRow.Заказ.НомерЗаказа).ToList();
                 foreach (var c in compositions)
                     db.СоставЗаказ.Remove(c);

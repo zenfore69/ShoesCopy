@@ -24,17 +24,24 @@ namespace ShoesNet.Wndows
         public CatalogPage()
         {
             InitializeComponent();
+
+            
+            if (NavigationService != null)
+            {
+                NavigationService.Navigated += OnNavigated;
+            }
+            this.Unloaded += CatalogPage_Unloaded;
+ 
+
             BtnAddProduct.Click += BtnAddProduct_Click;
 
-
-            if (CurrentUser.RoleId == "Менеджер" || CurrentUser.RoleId == "Администратор") 
+            if (CurrentUser.RoleId == "Менеджер" || CurrentUser.RoleId == "Администратор")
             {
                 BtnOrders.Visibility = Visibility.Visible;
             }
-            if (CurrentUser.RoleId == "Администратор") 
+            if (CurrentUser.RoleId == "Администратор")
             {
                 BtnAddProduct.Visibility = Visibility.Visible;
-                
             }
 
             if (CurrentUser.RoleId == "Гость" || CurrentUser.RoleId == "Авторизированный клиент")
@@ -65,35 +72,32 @@ namespace ShoesNet.Wndows
 
         private void LViewProducts_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            
-            if (CurrentUser.RoleId != "Администратор") return; 
-
+            if (CurrentUser.RoleId != "Администратор") return;
             if (AddEditProductPage.IsEditorOpen)
             {
                 MessageBox.Show("Откройте только одно окно редактирования товара за раз.", "Предупреждение", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-
             if (LViewProducts.SelectedItem is Товар selectedProduct)
             {
                 NavigationService.Navigate(new AddEditProductPage(selectedProduct));
             }
         }
+
         private void BtnDelete_Click(object sender, RoutedEventArgs e)
         {
             var button = sender as Button;
             var productForDelete = button.DataContext as Товар;
             if (productForDelete == null) return;
-
             if (CurrentUser.RoleId != "Администратор") return;
-    
+
             bool hasOrders = db.СоставЗаказ.Any(sz => sz.Артикул == productForDelete.Артикул);
             if (hasOrders)
             {
                 MessageBox.Show("Невозможно удалить товар, так как он используется в заказах.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            
+
             if (MessageBox.Show($"Вы уверены, что хотите удалить {productForDelete.НаименованиеТовара}?", "Внимание", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
                 try
@@ -109,49 +113,60 @@ namespace ShoesNet.Wndows
                 }
             }
         }
+
         private void BtnDelete_Loaded(object senser, RoutedEventArgs e)
         {
             var btn = senser as Button;
-            if(btn != null)
+            if (btn != null)
             {
-                if (CurrentUser.RoleId == "Администратор")
-                {
-                    btn.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    btn.Visibility = Visibility.Collapsed;
-                }
+                btn.Visibility = CurrentUser.RoleId == "Администратор" ? Visibility.Visible : Visibility.Collapsed;
             }
         }
+
         private void Page_Loaded(object sender, RoutedEventArgs e)
         {
             UpdateData();
         }
 
+        private void OnNavigated(object sender, NavigationEventArgs e)
+        {
+
+            if (e.Content == this)
+            {
+                Refresh();      
+            }
+        }
+
+        private void CatalogPage_Unloaded(object sender, RoutedEventArgs e)
+        {
+           
+            if (NavigationService != null)
+            {
+                NavigationService.Navigated -= OnNavigated;
+            }
+        }
 
         public void Refresh()
         {
             ReloadSuppliers();
             UpdateData();
         }
+   
 
         private void ReloadSuppliers()
         {
             if (CmbFilter == null) return;
-
             var currentSelected = CmbFilter.SelectedItem?.ToString();
             var normalizedSelected = NormalizeSupplier(currentSelected);
 
             var rawSuppliers = db.Товар
                 .Select(p => p.Поставщик)
                 .Where(s => s != null && s != "")
-                .ToList(); 
+                .ToList();
 
-   
             var suppliers = rawSuppliers
-                .Where(s => !string.IsNullOrWhiteSpace(s)) 
-                .Select(s => NormalizeSupplier(s))         
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => NormalizeSupplier(s))
                 .Distinct()
                 .OrderBy(s => s)
                 .ToList();
@@ -199,22 +214,19 @@ namespace ShoesNet.Wndows
                 ).ToList();
             }
 
-
-            if (CmbFilter.SelectedIndex > 0)
+            if (CmbFilter.SelectedIndex > 0 && CmbFilter.SelectedItem != null)
             {
-
-                if (CmbFilter.SelectedItem != null)
-                {
-                    string selectedSupplier = CmbFilter.SelectedItem.ToString();
-                    currentProducts = currentProducts.Where(p => (p.Поставщик ?? string.Empty).Replace('\u00A0', ' ').Trim() == selectedSupplier).ToList();
-                }
+                string selectedSupplier = CmbFilter.SelectedItem.ToString();
+                currentProducts = currentProducts.Where(p =>
+                    (p.Поставщик ?? string.Empty).Replace('\u00A0', ' ').Trim() == selectedSupplier
+                ).ToList();
             }
 
-            if (CmbSort.SelectedIndex == 1) 
+            if (CmbSort.SelectedIndex == 1)
             {
                 currentProducts = currentProducts.OrderBy(p => p.КолВоНаСкладе ?? 0).ToList();
             }
-            else if (CmbSort.SelectedIndex == 2) 
+            else if (CmbSort.SelectedIndex == 2)
             {
                 currentProducts = currentProducts.OrderByDescending(p => p.КолВоНаСкладе ?? 0).ToList();
             }

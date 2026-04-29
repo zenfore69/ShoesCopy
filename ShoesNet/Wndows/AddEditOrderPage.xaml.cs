@@ -30,8 +30,7 @@ namespace ShoesNet.Wndows
             _isEditorOpen = true;
             Unloaded += (_, __) => { _isEditorOpen = false; };
 
-            // Важно: LINQ to Entities не поддерживает IsNullOrWhiteSpace/Trim в выражениях для SQL.
-            // Поэтому сначала забираем значения, а фильтрацию делаем уже в памяти.
+
             var statuses = db.Заказ
                 .Select(o => o.СтатусЗаказа)
                 .Distinct()
@@ -44,7 +43,7 @@ namespace ShoesNet.Wndows
 
             if (statuses.Count == 0)
             {
-                // Fallback на случай пустых данных в БД.
+
                 statuses = new List<string> { "Новый", "В обработке", "Выдан" };
             }
             CmbStatus.ItemsSource = statuses;
@@ -120,7 +119,7 @@ namespace ShoesNet.Wndows
                     return;
                 }
 
-                // Номер заказа: автоматически вычисляем (max + 1).
+
                 if (!isEditMode)
                 {
                     int maxOrderNumber = db.Заказ.Select(o => o.НомерЗаказа).DefaultIfEmpty(0).Max();
@@ -129,13 +128,10 @@ namespace ShoesNet.Wndows
                 }
 
                 currentOrder.СтатусЗаказа = status.Trim();
-                // В SQL данные дат в примерах хранятся как "dd.MM.yyyy" (nvarchar).
+
                 currentOrder.ДатаЗаказа = DpOrderDate.SelectedDate.Value.ToString("dd.MM.yyyy", new CultureInfo("ru-RU"));
                 currentOrder.ДатаДоставки = DpPickupDate.SelectedDate.Value.ToString("dd.MM.yyyy", new CultureInfo("ru-RU"));
 
-                // Ищем пункт выдачи по введенному адресу (как в макете: поле текстовое).
-                // NormalizeText включает замену NBSP и Trim, что может не транслироваться в SQL.
-                // Поэтому сравниваем в памяти.
                 var pickups = db.ПунктВыдачи.ToList();
                 var pickup = pickups.FirstOrDefault(p => NormalizeText(p.Адрес) == pickupAddress);
                 if (pickup == null)
@@ -149,7 +145,6 @@ namespace ShoesNet.Wndows
                 if (string.IsNullOrWhiteSpace(currentOrder.КодДляПолучения))
                     currentOrder.КодДляПолучения = Guid.NewGuid().ToString("N").Substring(0, 10);
 
-                // Для простоты задания: заменяем состав заказа на один элемент с указанным артикулом.
                 var existingCompositions = db.СоставЗаказ.Where(s => s.КодЗаказа == currentOrder.НомерЗаказа).ToList();
                 foreach (var c in existingCompositions)
                     db.СоставЗаказ.Remove(c);

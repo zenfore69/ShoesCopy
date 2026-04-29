@@ -38,13 +38,13 @@ namespace ShoesNet
         {
             BtnBack.Visibility = MainFrame.CanGoBack ? Visibility.Visible : Visibility.Hidden;
 
-            // Обновляем данные на страницах после навигации (в т.ч. при возврате назад).
+
             if (e.Content is CatalogPage catalog)
                 catalog.Refresh();
             else if (e.Content is OrdersPage orders)
                 orders.Refresh();
 
-            // Сообщение о текущем пользователе наверху справа (рядом с кнопкой "Назад").
+    
             if (e.Content is AuthPage)
             {
                 TxtUserTop.Visibility = Visibility.Collapsed;

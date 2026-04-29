@@ -113,7 +113,7 @@ namespace ShoesNet.Wndows
         }
         private void BtnSave_Click(object sender, RoutedEventArgs e)
         {
-            // Явно читаем значения из UI, чтобы биндинг успел примениться к модели.
+
             currentProduct.Артикул = TxtArticle.Text?.Trim();
             currentProduct.НаименованиеТовара = TxtName.Text?.Trim();
             currentProduct.ОписаниеТовара = TxtDescription.Text;
@@ -168,7 +168,7 @@ namespace ShoesNet.Wndows
                 MessageBox.Show("Скидка не может быть отрицательной!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            if (discount > 99)   
+            if (discount > 99)
             {
                 MessageBox.Show("Скидка не может превышать 99%!", "Ошибка ввода", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
@@ -227,7 +227,16 @@ namespace ShoesNet.Wndows
 
                 db.SaveChanges();
                 MessageBox.Show("Данные успешно сохранены!", "Успех", MessageBoxButton.OK, MessageBoxImage.Information);
-                NavigationService.GoBack();
+
+       
+                if (NavigationService != null)
+                {
+                    NavigationService.Navigate(new CatalogPage());
+
+              
+                    if (NavigationService.CanGoBack)
+                        NavigationService.RemoveBackEntry();
+                }
             }
             catch (Exception ex)
             {
